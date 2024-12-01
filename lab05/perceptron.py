@@ -22,19 +22,32 @@ class PerceptronAlgorithm(object):
     
     # linear combination
     def input_net(self, x):
-        net = np.dot(x, self.w) + self.b
+    # If x is a 2D array (multiple samples), perform matrix multiplication
+        if len(x.shape) > 1:
+            net = np.dot(x, self.w) + self.b
+        else:
+            # If x is a 1D array (single sample), compute dot product
+            net = np.dot(x, self.w) + self.b
         return net
-    
-    # activation function heaviside
+
+
+    # Activation function Heaviside
     def f(self, net):
-        if(net >= 0.5):
-            return 1
-        return 0
+        # If net is an array, apply the condition element-wise
+        if isinstance(net, np.ndarray):
+            return np.where(net >= 0.5, 1, 0)
+        else:
+            # If net is a scalar, apply the condition directly
+            return 1 if net >= 0.5 else 0
+
     
     # make prediction results
     def predict(self, x):
-        y_pred = self.f(self.input_net(x))
-        return y_pred
+        if len(x.shape) == 1:  # Если один образец
+            return self.f(self.input_net(x))
+        else:  # Если массив образцов
+            net = self.input_net(x)
+            return np.array([self.f(n) for n in net])
     
     # loss function
     def loss_fn(self, y, y_pred):
