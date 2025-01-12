@@ -1,28 +1,25 @@
+import os
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
-import pickle
-import os
-from dotenv import load_dotenv
 from joblib import load
 
-# Загрузка переменных окружения
-load_dotenv()
+# Настройки подключения к PostgreSQL
+DATABASE = {
+    'host': 'monorail.proxy.rlwy.net',
+    'port': '56941',
+    'dbname': 'railway',
+    'user': 'postgres',
+    'password': 'zxJnsIDOJlzrEGhzQCkYqMorBPETbFxK',
+    'sslmode': 'require'  # Используем SSL для защищённого соединения
+}
 
 # Загрузка модели
 with open('svm_model.pkl', 'rb') as file:
     model = load(file)
 
-# Настройки подключения к PostgreSQL
-DATABASE = {
-    'host': os.getenv('DATABASE_HOST'),
-    'port': os.getenv('DATABASE_PORT'),
-    'dbname': os.getenv('DATABASE_NAME'),
-    'user': os.getenv('DATABASE_USER'),
-    'password': os.getenv('DATABASE_PASSWORD'),
-    'sslmode': 'require'  # Добавляем SSL
-}
-
+# Создание приложения Flask
 app = Flask(__name__)
 CORS(app)
 
