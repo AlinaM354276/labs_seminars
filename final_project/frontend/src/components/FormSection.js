@@ -17,7 +17,7 @@ import {
 const theme = createTheme({
   typography: {
     allVariants: {
-      color: '#FFFFFF', // Белый цвет для всех текстов
+      color: '#FFFFFF',
     },
   },
 });
@@ -53,41 +53,70 @@ const FormSection = () => {
 
   const validate = () => {
     const newErrors = {};
-  
-    // Проверка на пустые поля
     if (!formData.name) newErrors.name = 'Name is required.';
     if (!formData.surname) newErrors.surname = 'Surname is required.';
     if (!formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required.';
-  
-    // Проверка на возраст
     if (!formData.age || isNaN(formData.age) || formData.age < 0 || formData.age > 120) {
       newErrors.age = 'Please enter a valid age (0-120).';
     }
-  
-    // Проверка на выбор для полей с 1 или 2
-    ['smoking', 'anxiety', 'peerPressure', 'chronicDisease', 'fatigue', 'allergy', 'wheezing', 'alcohol', 'coughing', 'shortnessOfBreath', 'swallowingDifficulty', 'chestPain'].forEach(
-      (field) => {
-        if (!formData[field]) {
-          newErrors[field] = `Please select an option for ${field}.`;
-        }
+    ['smoking', 'anxiety', 'peerPressure', 'chronicDisease', 'fatigue', 'allergy', 'wheezing', 'alcohol', 'coughing', 'shortnessOfBreath', 'swallowingDifficulty', 'chestPain'].forEach((field) => {
+      if (!formData[field]) {
+        newErrors[field] = `Please select an option for ${field}.`;
       }
-    );
-  
-    console.log('Validation Errors:', newErrors); // Логи для проверки ошибок
-  
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0; // Если есть ошибки, валидация не пройдёт
-  };  
+    });
 
-  const handleSubmit = () => {
-    console.log('Button clicked'); // Проверка клика
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
     if (validate()) {
-      console.log('Validation passed'); // Валидация пройдена
-      setResult('Lung Cancer Probability: 80%'); // Устанавливаем результат
-    } else {
-      console.log('Validation failed'); // Валидация провалена
+      const transformedData = {
+        name: formData.name,
+        family_name: formData.surname, // Поле "surname" преобразуется в "family_name"
+        phone: formData.phoneNumber, // Поле "phoneNumber" преобразуется в "phone"
+        gender: formData.gender === 'Female', // Female -> True, Male -> False
+        age: Number(formData.age), // Возраст преобразуется в число
+        smoking: formData.smoking === '1', // "1" -> True, "0" -> False
+        anxiety: formData.anxiety === '1',
+        peer_pressure: formData.peerPressure === '1',
+        chronic_disease: formData.chronicDisease === '1',
+        fatigue: formData.fatigue === '1',
+        allergy: formData.allergy === '1',
+        wheezing: formData.wheezing === '1',
+        alcohol: formData.alcohol === '1',
+        coughing: formData.coughing === '1',
+        shortness_of_breath: formData.shortnessOfBreath === '1', // Поле преобразуется
+        swallowing_difficulty: formData.swallowingDifficulty === '1', // Поле преобразуется
+        chest_pain: formData.chestPain === '1', // Поле преобразуется
+      };      
+  
+      console.log('Transformed Data:', transformedData);
+  
+      try {
+        const response = await fetch('https://labs-seminars.onrender.com/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transformedData),
+        });
+  
+        console.log('Response Status:', response.status);
+        const responseData = await response.json();
+        console.log('Response Data:', responseData);
+  
+        if (response.status === 200) {
+          setResult(responseData.result === 1 ? 'Lung cancer: yes' : 'Lung cancer: no');
+        } else {
+          setResult('Server error: Unable to process request.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        setResult('Error: Unable to reach the server.');
+      }
     }
   };
+  
+
 
   return (
     <ThemeProvider theme={theme}>
@@ -95,7 +124,7 @@ const FormSection = () => {
         id="form-section"
         sx={{
           padding: '40px',
-          backgroundColor: '#132D46', 
+          backgroundColor: '#132D46',
           minHeight: '100vh',
         }}
       >
@@ -103,7 +132,6 @@ const FormSection = () => {
           Enter Patient Information
         </Typography>
         <Grid container spacing={4} sx={{ maxWidth: '1200px', margin: '0 auto' }}>
-          {/* Поля для имени, фамилии и номера телефона */}
           <Grid item xs={12} md={4}>
             <TextField
               fullWidth
@@ -152,8 +180,6 @@ const FormSection = () => {
               helperText={errors.phoneNumber}
             />
           </Grid>
-
-          {/* Пол для ввода пола */}
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel style={{ color: '#FFFFFF' }}>Gender</InputLabel>
@@ -163,14 +189,13 @@ const FormSection = () => {
                 onChange={handleInputChange}
                 sx={{ color: '#FFFFFF' }}
               >
-                <MenuItem value="M" style={{ color: '#132D46' }}>Male</MenuItem>
-                <MenuItem value="F" style={{ color: '#132D46' }}>Female</MenuItem>
+                <MenuItem value="Male" style={{ color: '#132D46' }}>Male</MenuItem>
+                <MenuItem value="Female" style={{ color: '#132D46' }}>Female</MenuItem>
               </Select>
               {errors.gender && <FormHelperText error>{errors.gender}</FormHelperText>}
             </FormControl>
           </Grid>
 
-          {/* Поле для возраста */}
           <Grid item xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel style={{ color: '#FFFFFF' }}>Age</InputLabel>
@@ -178,15 +203,7 @@ const FormSection = () => {
                 name="age"
                 value={formData.age}
                 onChange={handleInputChange}
-                sx={{ 
-                  color: '#FFFFFF',
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#00000',
-                  },
-                  '&:hover .MuiOutlinedInput-notchedOutline': {
-                    borderColor: '#FFFFFF',
-                  },  
-                }}
+                sx={{ color: '#FFFFFF' }}
               >
                 {[...Array(121).keys()].map((age) => (
                   <MenuItem key={age} value={age} style={{ color: '#132D46' }}>
@@ -198,35 +215,19 @@ const FormSection = () => {
             </FormControl>
           </Grid>
 
-          {/* Поле для выбора Smoking */}
-          <Grid item xs={12} md={6}>
-            <FormControl fullWidth>
-              <InputLabel style={{ color: '#FFFFFF' }}>Smoking Yes=1, No=0</InputLabel>
-              <Select
-                name="smoking"
-                value={formData.smoking}
-                onChange={handleInputChange}
-                sx={{ color: '#FFFFFF' }}
-              >
-                <MenuItem value="0" style={{ color: '#132D46' }}>0</MenuItem>
-                <MenuItem value="1" style={{ color: '#132D46' }}>1</MenuItem>
-              </Select>
-              {errors.smoking && <FormHelperText error>{errors.smoking}</FormHelperText>}
-            </FormControl>
-          </Grid>
-
           {[
-            { name: 'anxiety', label: 'Anxiety Yes=1, No = 0' },
-            { name: 'peerPressure', label: 'Peer Pressure Yes=1, No = 0' },
-            { name: 'chronicDisease', label: 'Chronic Disease Yes=1, No = 0' },
-            { name: 'fatigue', label: 'Fatigue Yes=1, No = 0' },
-            { name: 'allergy', label: 'Allergy Yes=1, No = 0' },
-            { name: 'wheezing', label: 'Wheezing Yes=1, No = 0' },
-            { name: 'alcohol', label: 'Alcohol Yes=1, No = 0' },
-            { name: 'coughing', label: 'Coughing Yes=1, No = 0' },
-            { name: 'shortnessOfBreath', label: 'Shortness of Breath Yes=1, No = 0' },
-            { name: 'swallowingDifficulty', label: 'Swallowing Difficulty Yes=1, No = 0' },
-            { name: 'chestPain', label: 'Chest Pain Yes=1, No = 0 ' },
+            { name: 'smoking', label: 'Smoking (1 = Yes, 0 = No)' },
+            { name: 'anxiety', label: 'Anxiety (1 = Yes, 0 = No)' },
+            { name: 'peerPressure', label: 'Peer Pressure (1 = Yes, 0 = No)' },
+            { name: 'chronicDisease', label: 'Chronic Disease (1 = Yes, 0 = No)' },
+            { name: 'fatigue', label: 'Fatigue (1 = Yes, 0 = No)' },
+            { name: 'allergy', label: 'Allergy (1 = Yes, 0 = No)' },
+            { name: 'wheezing', label: 'Wheezing (1 = Yes, 0 = No)' },
+            { name: 'alcohol', label: 'Alcohol (1 = Yes, 0 = No)' },
+            { name: 'coughing', label: 'Coughing (1 = Yes, 0 = No)' },
+            { name: 'shortnessOfBreath', label: 'Shortness of Breath (1 = Yes, 0 = No)' },
+            { name: 'swallowingDifficulty', label: 'Swallowing Difficulty (1 = Yes, 0 = No)' },
+            { name: 'chestPain', label: 'Chest Pain (1 = Yes, 0 = No)' },
           ].map((field) => (
             <Grid item xs={12} md={6} key={field.name}>
               <FormControl fullWidth>
@@ -237,7 +238,7 @@ const FormSection = () => {
                   onChange={handleInputChange}
                   sx={{ color: '#FFFFFF' }}
                 >
-                  <MenuItem value="0" style={{ color: '#132D46' }} >0</MenuItem>
+                  <MenuItem value="0" style={{ color: '#132D46' }}>0</MenuItem>
                   <MenuItem value="1" style={{ color: '#132D46' }}>1</MenuItem>
                 </Select>
                 {errors[field.name] && <FormHelperText error>{errors[field.name]}</FormHelperText>}
@@ -250,7 +251,7 @@ const FormSection = () => {
             variant="contained"
             sx={{
               backgroundColor: '#FFFFFF',
-              color: '#132D46', 
+              color: '#132D46',
             }}
             onClick={handleSubmit}
           >
