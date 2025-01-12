@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
 import pickle
+import os
 
 # Загрузка модели
 with open('svm_model.pkl', 'rb') as file:
@@ -68,4 +69,5 @@ def predict():
         return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))  # Получение порта из переменной окружения или 5000 по умолчанию
+    app.run(host='0.0.0.0', port=port, debug=True)
