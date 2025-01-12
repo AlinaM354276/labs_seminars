@@ -24,6 +24,11 @@ CORS(app)
 def get_db_connection():
     return psycopg2.connect(**DATABASE)
 
+# Корневой маршрут для проверки, что приложение работает
+@app.route('/')
+def home():
+    return "Flask app is running!"
+
 # Маршрут для обработки данных
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -41,12 +46,14 @@ def predict():
         # Предсказание модели
         prediction = model.predict([features])[0]
 
-        # Сохранение данных в базу
+        # Подключение к базе данных
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # Сохранение данных в базу
         query = """
         INSERT INTO medical_results (
-            user_id, gender, age, smoking, yellow_fingers, anxiety,
+            user_id, gender, age, smoking, anxiety,
             peer_pressure, chronic_disease, fatigue, allergy, wheezing,
             alcohol, coughing, shortness_of_breath, swallowing_difficulty,
             chest_pain, created_at
@@ -68,6 +75,7 @@ def predict():
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
+# Запуск приложения
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))  # Получение порта из переменной окружения или 5000 по умолчанию
     app.run(host='0.0.0.0', port=port, debug=True)
